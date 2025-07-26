@@ -1,0 +1,71 @@
+import csv
+import os
+from datetime import datetime, timedelta
+import pandas as pd
+
+DATA_FILE = 'expenses.csv'
+
+# Ensure CSV file exists
+if not os.path.exists(DATA_FILE):
+    with open(DATA_FILE, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['Date', 'Category', 'Amount', 'Note'])
+
+def add_expense():
+    date = datetime.now().strftime('%Y-%m-%d')
+    category = input("Enter category (e.g., Food, Transport): ")
+    amount = float(input("Enter amount: ₹"))
+    note = input("Optional note: ")
+
+    with open(DATA_FILE, 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([date, category, amount, note])
+    print("✅ Expense added!")
+
+def show_summary(period):
+    df = pd.read_csv(DATA_FILE, parse_dates=['Date'])
+
+    if period == 'today':
+        filtered = df[df['Date'] == pd.Timestamp.today().normalize()]
+    elif period == 'week':
+        today = pd.Timestamp.today().normalize()
+        week_ago = today - pd.Timedelta(days=6)
+        filtered = df[(df['Date'] >= week_ago) & (df['Date'] <= today)]
+    elif period == 'month':
+        today = pd.Timestamp.today()
+        filtered = df[(df['Date'].dt.month == today.month) & (df['Date'].dt.year == today.year)]
+    else:
+        print("❌ Invalid period")
+        return
+
+    total = filtered['Amount'].sum()
+    print(f"\n📊 Total spent in {period}: ₹{total:.2f}")
+    print(filtered[['Date', 'Category', 'Amount', 'Note']].to_string(index=False))
+
+def menu():
+    while True:
+        print("\n===== Expense Tracker =====")
+        print("1. Add new expense")
+        print("2. Show today's summary")
+        print("3. Show this week's summary")
+        print("4. Show this month's summary")
+        print("5. Exit")
+
+        choice = input("Choose an option: ")
+
+        if choice == '1':
+            add_expense()
+        elif choice == '2':
+            show_summary('today')
+        elif choice == '3':
+            show_summary('week')
+        elif choice == '4':
+            show_summary('month')
+        elif choice == '5':
+            print("👋 Exiting... Goodbye!")
+            break
+        else:
+            print("❌ Invalid choice. Try again.")
+
+if __name__ == '__main__':
+    menu()
